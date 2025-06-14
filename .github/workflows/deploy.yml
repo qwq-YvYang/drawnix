@@ -1,4 +1,4 @@
-name: Build and Deploy Static Site
+name: Build and Deploy Static Site (Node 20)
 
 on:
   workflow_dispatch:
@@ -14,25 +14,25 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Build Docker image
-        run: docker build -t static-site .
+      - name: Install dependencies
+        run: npm install
 
-      - name: Create output directory
-        run: mkdir -p output
+      - name: Build project
+        run: npm run build
 
-      - name: Extract static files from container
+      - name: Verify output path exists
         run: |
-          docker create --name extract static-site
-          docker cp extract:/builder/dist/apps/web ./output
-          docker rm extract
+          ls -al dist/apps/web || (echo "❌ Build output not found!" && exit 1)
 
-      - name: Deploy to page branch
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output/web
+          publish_dir: dist/apps/web
           publish_branch: page
           force_orphan: true
